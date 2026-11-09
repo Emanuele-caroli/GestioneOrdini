@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: gestione-ordini-db
+    environment:
+      POSTGRES_DB: gestione_ordini
+      POSTGRES_USER: ordini
+      POSTGRES_PASSWORD: ordini
+    ports:
+      - "5436:5432"
+    volumes:
+      - ordini-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ordini -d gestione_ordini"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  ordini-data:
