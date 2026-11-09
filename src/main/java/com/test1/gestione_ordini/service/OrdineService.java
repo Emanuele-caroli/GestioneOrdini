@@ -4,15 +4,21 @@ import com.test1.gestione_ordini.dto.request.AggiornaStatoOrdineRequest;
 import com.test1.gestione_ordini.dto.request.OrdineRequest;
 import com.test1.gestione_ordini.dto.response.OrdineResponse;
 import com.test1.gestione_ordini.dto.response.StatisticaStatoResponse;
+import com.test1.gestione_ordini.entity.ClienteEntity;
 import com.test1.gestione_ordini.entity.OrdineEntity;
 import com.test1.gestione_ordini.entity.enums.Stato;
 import com.test1.gestione_ordini.exception.OrdineNotFoundException;
 import com.test1.gestione_ordini.exception.TransizioneStatoNonConsentitaException;
+import com.test1.gestione_ordini.mapper.ClienteMapper;
 import com.test1.gestione_ordini.mapper.OrdineMapper;
+import com.test1.gestione_ordini.repository.ClienteRepository;
 import com.test1.gestione_ordini.repository.OrdineRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,14 +35,19 @@ public class OrdineService {
     private static final DateTimeFormatter FORMATO_DATA_CODICE = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final OrdineRepository ordineRepository;
+    private final ClienteRepository clienteRepository;
     private final OrdineMapper ordineMapper;
+    private final ClienteMapper clienteMapper;
 
     @Transactional
     public OrdineResponse creaOrdine(OrdineRequest request) {
         LocalDateTime dataOrdine = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
+        ClienteEntity cliente = clienteRepository.findByEmail(request.getEmailCliente())
+                .orElseGet(() -> clienteRepository.save((clienteMapper.toCliente(request))));
         OrdineEntity ordine = ordineMapper.toEntity(request);
         ordine.setTotale(calcolaTotale(request.getPrezzoUnitario(), request.getQuantita()));
+        ordine.setCliente(cliente);
         ordine.setCodiceOrdine(generaCodiceOrdine(dataOrdine));
         ordine.setDataOrdine(dataOrdine);
         ordine.setStato(Stato.RICEVUTO);
@@ -48,11 +59,11 @@ public class OrdineService {
         return ordineMapper.toResponse(trovaOrdine(id));
     }
 
-    public List<OrdineResponse> elencoOrdini(Stato stato) {
-        List<OrdineEntity> ordini = (stato == null)
-                ? ordineRepository.findAll()
-                : ordineRepository.findByStato(stato);
-        return ordineMapper.toResponseList(ordini);
+    public Page<OrdineResponse> elencoOrdini(Stato stato, Pageable pageable) {
+        Page<OrdineEntity> pagina = (stato == null)
+                ? ordineRepository.findAll(pageable)
+                : ordineRepository.findByStato(stato, pageable);
+        return pagina.map(ordineMapper::toResponse);
     }
 
     @Transactional
