@@ -15,6 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -92,10 +96,10 @@ public class OrdiniController {
     @ApiResponse(responseCode = "400", description = "Valore di stato non ammesso",
             content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                     schema = @Schema(implementation = ProblemDetail.class)))
-    public List<OrdineResponse> elencoOrdini(
-            @Parameter(description = "Filtro facoltativo per stato; se omesso restituisce tutti gli ordini")
-            @RequestParam(required = false) Stato stato) {
-        return ordineService.elencoOrdini(stato);
+    public PagedModel<OrdineResponse> elencoOrdini(
+            @RequestParam(required = false) Stato stato,
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        return new PagedModel<>(ordineService.elencoOrdini(stato, pageable));
     }
 
     @PatchMapping("/{id}/stato")

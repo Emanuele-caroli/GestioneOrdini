@@ -21,8 +21,13 @@ public interface OrdineMapper {
     @Mapping(target = "dataOrdine", ignore = true)
     @Mapping(target = "totale", ignore = true)
     @Mapping(target = "stato", ignore = true)
+    @Mapping(target = "cliente", ignore = true)
     OrdineEntity toEntity(OrdineRequest request);
 
+    @Mapping(target = "nomeCliente", source = "cliente.nome")
+    @Mapping(target = "cognomeCliente", source = "cliente.cognome")
+    @Mapping(target = "emailCliente", source = "cliente.email")
+    @Mapping(target = "telefonoCliente", source = "cliente.telefono")
     OrdineResponse toResponse(OrdineEntity entity);
 
     List<OrdineResponse> toResponseList(List<OrdineEntity> entities);
